@@ -1,26 +1,26 @@
 var express = require("express");
-var app = express();
+var mongoose = require("mongoose");
+var cookieSession = require("cookie-session");
 var passport = require("passport");
-var GoogleStrategy = require("passport-google-oauth20").Strategy;
-var keys = require("./config/keys.js");
+var keys = require("./config/keys");
+require("./models/User");
+require("./services/passport");
+
+var app = express();
+
+app.use(cookieSession({
+    maxAge: 30 * 24 * 60 * 60 * 1000,
+    keys: [keys.cookieKey]
+}));
+app.use(passport.initialize());
+app.use(passport.session());
+
+mongoose.connect(keys.mongoURI);
+
+require("./routes/authRoutes")(app);
 
 var PORT = process.env.PORT || 5000;
 
-passport.use(new GoogleStrategy({
-    clientID: keys.clientID,
-    clientSecret: keys.clientSecret,
-    callbackURL: '/auth/google/callback'
-},
-accessToken => {
-    console.log(accessToken);
-}));
-
-app.get("/auth/google", passport.authenticate('google', {
-    scope: ['profile', 'email']
-}));
-
-app.get("/auth/google/callback", passport.authenticate('google'));
-
 app.listen(PORT, () => {
-    console.log("Server has started!");
+    console.log("Server has started on port " + PORT);
 });
